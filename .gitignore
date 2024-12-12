@@ -1,0 +1,10 @@
+__pycache__
+.vscode
+ckpt/best_ckpt
+ckpts/*.pt
+test.py
+data/formula_images_processed
+data/*.lst
+data/*.pkl
+
+
