@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--cuda", action='store_true',
                         default=True, help="Use cuda or not")
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--beam_size", type=int, default=1)
+    parser.add_argument("--beam_size", type=int, default=32)
     parser.add_argument("--result_path", type=str,
                         default="./results/result.txt", help="The file to store result")
     parser.add_argument("--ref_path", type=str,

@@ -203,6 +203,9 @@ class BeamSearch:
 
             # Use the beam indices to extract the corresponding classes.
             # shape: (batch_size, beam_size)
+            # print(f"restricted_beam_indices dtype: {restricted_beam_indices.dtype}")
+            restricted_beam_indices = restricted_beam_indices.long()###add データ型を変更
+            # print(f"restricted_beam_indices dtype after .long(): {restricted_beam_indices.dtype}")
             restricted_predicted_classes = reshaped_predicted_classes.gather(
                 1, restricted_beam_indices)
 
@@ -216,7 +219,7 @@ class BeamSearch:
             # dividing by per_node_beam_size gives the ancestor. (Note that this is integer
             # division as the tensor is a LongTensor.)
             # shape: (batch_size, beam_size)
-            backpointer = restricted_beam_indices / self.per_node_beam_size
+            backpointer = restricted_beam_indices // self.per_node_beam_size###//にした
 
             backpointers.append(backpointer)
 
@@ -230,6 +233,9 @@ class BeamSearch:
                     expand(batch_size, self.beam_size, *last_dims)
 
                 # shape: (batch_size * beam_size, *)
+                # print(f"expanded_backpointer dtype: {expanded_backpointer.dtype}")
+                expanded_backpointer = expanded_backpointer.long()###add データ型を変更
+                # print(f"expanded_backpointer dtype after .long(): {expanded_backpointer.dtype}")
                 state[key] = state_tensor.\
                     reshape(batch_size, self.beam_size, *last_dims).\
                     gather(1, expanded_backpointer).\
@@ -248,6 +254,10 @@ class BeamSearch:
 
         # shape: (batch_size, beam_size)
         cur_backpointers = backpointers[-1]
+        # print(f"Initial cur_backpointers dtype: {cur_backpointers.dtype}")  # デバッグ用
+        cur_backpointers = cur_backpointers.long()# dtype を torch.long に変換
+        # print(f"Initial cur_backpointers dtype after .long(): {cur_backpointers.dtype}")  # デバッグ用
+
 
         for timestep in range(len(predictions) - 2, 0, -1):
             # shape: (batch_size, beam_size, 1)
