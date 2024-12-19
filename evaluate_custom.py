@@ -21,22 +21,25 @@ from torchvision import transforms
 def decode_predictions(predictions, vocab):
     """
     モデルの予測結果をLaTeXコードにデコードする関数。
-    predictions: (batch_size, beam_size, max_steps)
+    predictions: list of lists or list of tensors
     return: list of LaTeX strings
     """
-    batch_size, beam_size, max_steps = predictions.size()
     latex_outputs = []
 
-    for i in range(batch_size):
-        for j in range(beam_size):
-            tokens = predictions[i, j, :]
-            latex = ""
-            for token_id in tokens:
-                token_id = token_id.item()
-                if token_id == vocab.sign2id['<end>']:
-                    break
-                latex += vocab.id2sign.get(token_id, '')
-            latex_outputs.append(latex)
+    for seq in predictions:
+        latex = ""
+        for token in seq:
+            # トークンがテンソルの場合は数値を取得
+            token_id = token.item() if isinstance(token, torch.Tensor) else token
+            # <end> トークンで終了
+            if token_id == vocab.sign2id.get('<end>', 2):
+                break
+            # トークンIDをLaTeX文字列に変換
+            sign = vocab.id2sign.get(token_id, '')
+            latex += sign
+            print(f"Decoded token_id {token_id} to '{sign}'")
+        latex_outputs.append(latex)
+
     return latex_outputs
 
 def main():
@@ -50,9 +53,11 @@ def main():
                         default="./my_images/", help="The directory of input images")
     parser.add_argument("--output_dir", type=str,
                         default="./inference_results/", help="The directory to store results")
+    parser.add_argument("--vocab_path", type=str,
+                        required=True, help="The directory containing vocab.pkl")
     parser.add_argument("--cuda", action='store_true',
                         default=True, help="Use cuda or not")
-    parser.add_argument("--beam_size", type=int, default=32,
+    parser.add_argument("--beam_size", type=int, default=5,
                         help="Beam size for beam search")
     parser.add_argument("--max_len", type=int,
                         default=64, help="Max step of decoding")
@@ -66,7 +71,7 @@ def main():
 
     # 語彙のロード
     print("Loading vocabulary...")
-    vocab = load_vocab(args.input_dir)  # 語彙のロード。必要に応じてパスを変更
+    vocab = load_vocab(args.vocab_path)  # 語彙のロード。vocab.pkl が存在するディレクトリを指定
     use_cuda = True if args.cuda and torch.cuda.is_available() else False
 
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -86,7 +91,7 @@ def main():
         batch_size=1,  # 1つの画像ずつ処理
         shuffle=False,
         pin_memory=True if use_cuda else False,
-        num_workers=4
+        num_workers=1  # 警告を回避するために1に設定
     )
 
     # モデルの構築とロード
@@ -117,6 +122,7 @@ def main():
         try:
             # 推論
             results = latex_producer(images.to(device))
+            print(f"Raw predictions for {img_names[0]}: {results}")
             # デコード
             latex = decode_predictions(results, vocab)
         except RuntimeError as e:
