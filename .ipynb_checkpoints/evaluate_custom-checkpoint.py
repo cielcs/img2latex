@@ -79,10 +79,10 @@ def main():
     # カスタムデータセットの準備
     print("Constructing data loader...")
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        # transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225]),
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406],
+        #                      std=[0.229, 0.224, 0.225]),
     ])
 
     custom_dataset = CustomImageDataset(image_dir=args.input_dir, transform=transform)
@@ -122,9 +122,15 @@ def main():
         try:
             # 推論
             results = latex_producer(images.to(device))
+            
+            # 生データの確認（デバッグ用）
             print(f"Raw predictions for {img_names[0]}: {results}")
-            # デコード
-            latex = decode_predictions(results, vocab)
+            
+            # `decode_predictions` を呼び出さず、直接結果を使用
+            latex = results  # results は既にLaTeX文字列のリスト
+            
+            # デコード結果の確認（デバッグ用）
+            print(f"Decoded LaTeX for {img_names[0]}: {latex}")
         except RuntimeError as e:
             print(f"RuntimeError encountered: {e}")
             continue  # エラーが発生した画像はスキップ

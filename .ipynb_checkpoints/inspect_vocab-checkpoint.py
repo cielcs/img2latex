@@ -10,7 +10,7 @@ def main():
     vocab = load_vocab(args.vocab_path)
     print(f"Vocabulary size: {len(vocab)}")
     print("Sample mappings:")
-    for idx, sign in list(vocab.id2sign.items())[:10]:
+    for idx, sign in list(vocab.id2sign.items())[:300]:
         print(f"{idx}: {sign}")
 
 if __name__ == "__main__":
